@@ -1,14 +1,5 @@
-import * as fs from "node:fs";
-import { execSwiftlint, type ExecOptions } from "./process";
-import { additionalParameters, configSearchPaths } from "./config";
-
-function explicitConfigArgs(): string[] {
-  const paths = configSearchPaths();
-  if (paths.length === 0) return [];
-  const valid = paths.find((p) => fs.existsSync(p));
-  if (!valid) return [];
-  return ["--config", valid];
-}
+import { execSwiftlint } from "./process";
+import { additionalParameters, explicitConfigArgs } from "./config";
 
 export async function fixFile(
   filePath: string,

@@ -104,7 +104,7 @@ export class SwiftLintProvider implements vscode.Disposable {
       try {
         const results = await lintWorkspace(folder.uri.fsPath);
         for (const [filePath, diags] of results) {
-          this.diagnostics.set(vscode.Uri.file(path.resolve(filePath)), diags);
+          this.diagnostics.set(vscode.Uri.file(path.resolve(folder.uri.fsPath, filePath)), diags);
         }
         this.log(`Workspace lint complete: ${results.size} file(s) with issues`);
       } catch (err) {

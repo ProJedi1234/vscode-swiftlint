@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
-import * as fs from "node:fs";
 import { execSwiftlint, type ExecOptions } from "./process";
-import { additionalParameters, configSearchPaths } from "./config";
+import { additionalParameters, explicitConfigArgs } from "./config";
 
 interface SwiftLintViolation {
   character: number | null;
@@ -41,16 +40,6 @@ function toDiagnostic(v: SwiftLintViolation): vscode.Diagnostic {
     ),
   };
   return diag;
-}
-
-function explicitConfigArgs(): string[] {
-  const paths = configSearchPaths();
-  if (paths.length === 0) return [];
-  // Only pass --config when user has explicitly set configSearchPaths.
-  // Find the first path that actually exists on disk.
-  const valid = paths.find((p) => fs.existsSync(p));
-  if (!valid) return [];
-  return ["--config", valid];
 }
 
 function buildArgs(extra: string[]): string[] {

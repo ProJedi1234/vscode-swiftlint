@@ -47,6 +47,14 @@ export function verboseLogging(): boolean {
   return cfg().get<boolean>("verboseLogging", false);
 }
 
+export function explicitConfigArgs(): string[] {
+  const paths = configSearchPaths();
+  if (paths.length === 0) return [];
+  const valid = paths.find((p) => fs.existsSync(p));
+  if (!valid) return [];
+  return ["--config", valid];
+}
+
 const CONFIG_NAMES = [".swiftlint.yml", ".swiftlint.yaml"];
 
 /**
