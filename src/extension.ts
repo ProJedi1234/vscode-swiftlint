@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { isEnabled } from "./config";
 import { SwiftLintProvider } from "./provider";
 import { SwiftLintCodeActionProvider } from "./actions";
-import { fixFile, fixWorkspace } from "./fixer";
+import { fixFile, fixWorkspace, formatFile, formatWorkspace } from "./fixer";
 import { killAllProcesses } from "./process";
 
 let provider: SwiftLintProvider | undefined;
@@ -61,6 +61,30 @@ export async function activate(
       await doc.save();
       await fixFile(doc.uri.fsPath, cwd);
       provider?.lintDocument(doc);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("swiftlint.formatDocument", async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "swift") return;
+      const doc = editor.document;
+      const cwd =
+        vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ?? "";
+      await doc.save();
+      await formatFile(doc.uri.fsPath, cwd);
+      provider?.lintDocument(doc);
+    }),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("swiftlint.formatWorkspace", async () => {
+      const folders = vscode.workspace.workspaceFolders;
+      if (!folders) return;
+      for (const folder of folders) {
+        await formatWorkspace(folder.uri.fsPath);
+      }
+      provider?.lintAllWorkspaceFolders();
     }),
   );
 

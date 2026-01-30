@@ -5,6 +5,10 @@
   "version": "0.1.0",
   "publisher": "swiftlint",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ProJedi1234/vscode-swiftlint"
+  },
   "engines": {
     "vscode": "^1.105.0"
   },
@@ -24,6 +28,14 @@
       {
         "command": "swiftlint.fixDocument",
         "title": "SwiftLint: Fix Document"
+      },
+      {
+        "command": "swiftlint.formatDocument",
+        "title": "SwiftLint: Format Document"
+      },
+      {
+        "command": "swiftlint.formatWorkspace",
+        "title": "SwiftLint: Format Workspace"
       }
     ],
     "configuration": {

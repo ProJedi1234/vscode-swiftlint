@@ -46,6 +46,33 @@ SwiftLint integration for Visual Studio Code. Lints Swift files on open, save, a
 | `swiftlint.lintOnSave` | boolean | `true` | Lint when saving a file |
 | `swiftlint.verboseLogging` | boolean | `false` | Verbose output channel logging |
 
+## Install
+
+### From GitHub Release
+
+Download the latest `.vsix` from [Releases](https://github.com/ProJedi1234/vscode-swiftlint/releases), then:
+
+```bash
+code --install-extension vscode-swiftlint-*.vsix
+```
+
+For Cursor:
+
+```bash
+cursor --install-extension vscode-swiftlint-*.vsix
+```
+
+### From Source
+
+```bash
+git clone https://github.com/ProJedi1234/vscode-swiftlint.git
+cd vscode-swiftlint
+bun install
+bun run compile
+bun run package
+code --install-extension vscode-swiftlint-*.vsix
+```
+
 ## Development
 
 ```bash

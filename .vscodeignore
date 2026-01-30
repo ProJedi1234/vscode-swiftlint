@@ -6,3 +6,4 @@ tsconfig.json
 esbuild.mjs
 .gitignore
 bun.lockb
+bun.lock

@@ -22,6 +22,34 @@ export async function fixFile(
   await execSwiftlint(args, { cwd });
 }
 
+export async function formatFile(
+  filePath: string,
+  cwd: string,
+): Promise<void> {
+  const args = [
+    "lint",
+    "--fix",
+    "--format",
+    "--quiet",
+    ...findConfigArg(cwd),
+    ...additionalParameters(),
+    filePath,
+  ];
+  await execSwiftlint(args, { cwd });
+}
+
+export async function formatWorkspace(folder: string): Promise<void> {
+  const args = [
+    "lint",
+    "--fix",
+    "--format",
+    "--quiet",
+    ...findConfigArg(folder),
+    ...additionalParameters(),
+  ];
+  await execSwiftlint(args, { cwd: folder });
+}
+
 export async function fixWorkspace(folder: string): Promise<void> {
   const args = [
     "lint",
