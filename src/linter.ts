@@ -57,7 +57,7 @@ export async function lintFile(
 ): Promise<vscode.Diagnostic[]> {
   const useStdin = options?.content !== undefined;
   const extra = useStdin
-    ? ["--use-stdin", "--stdin-path", filePath]
+    ? ["--use-stdin"]
     : [filePath];
   const args = buildArgs(extra);
   const execOpts: ExecOptions = {
