@@ -73,6 +73,7 @@ export class SwiftLintProvider implements vscode.Disposable {
         path.dirname(filePath);
       const diags = await lintFile(filePath, cwd, {
         signal: controller.signal,
+        content: doc.getText(),
       });
 
       // Skip if a newer version has been requested

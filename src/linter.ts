@@ -64,10 +64,18 @@ function buildArgs(extra: string[]): string[] {
 export async function lintFile(
   filePath: string,
   cwd: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; content?: string },
 ): Promise<vscode.Diagnostic[]> {
-  const args = buildArgs([filePath]);
-  const execOpts: ExecOptions = { cwd, signal: options?.signal };
+  const useStdin = options?.content !== undefined;
+  const extra = useStdin
+    ? ["--use-stdin", "--stdin-path", filePath]
+    : [filePath];
+  const args = buildArgs(extra);
+  const execOpts: ExecOptions = {
+    cwd,
+    signal: options?.signal,
+    ...(useStdin && { stdin: options.content }),
+  };
 
   const result = await execSwiftlint(args, execOpts);
   const violations = parseViolations(result.stdout);

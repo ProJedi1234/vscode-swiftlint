@@ -49,9 +49,12 @@ export function execSwiftlint(
     });
 
     activeProcesses.add(child);
+    let settled = false;
 
     const onAbort = () => {
       child.kill();
+      if (settled) return;
+      settled = true;
       activeProcesses.delete(child);
       reject(new DOMException("Aborted", "AbortError"));
     };
@@ -75,12 +78,16 @@ export function execSwiftlint(
     child.on("close", (code) => {
       activeProcesses.delete(child);
       options.signal?.removeEventListener("abort", onAbort);
+      if (settled) return;
+      settled = true;
       resolve({ stdout, stderr, exitCode: code ?? 1 });
     });
 
     child.on("error", (err) => {
       activeProcesses.delete(child);
       options.signal?.removeEventListener("abort", onAbort);
+      if (settled) return;
+      settled = true;
       reject(err);
     });
   });
