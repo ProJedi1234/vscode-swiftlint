@@ -44,7 +44,7 @@ export class SwiftLintProvider implements vscode.Disposable {
     }
   }
 
-  async lintDocument(doc: vscode.TextDocument): Promise<void> {
+  async lintDocument(doc: vscode.TextDocument, useStdin = false): Promise<void> {
     if (!this.isSwiftDocument(doc)) return;
 
     // Skip if onlyEnableWithConfig is set and no config found for this file
@@ -74,7 +74,7 @@ export class SwiftLintProvider implements vscode.Disposable {
         path.dirname(filePath);
       const diags = await lintFile(filePath, cwd, {
         signal: controller.signal,
-        content: doc.getText(),
+        ...(useStdin && { content: doc.getText() }),
       });
 
       // Skip if a newer version has been requested
@@ -150,7 +150,7 @@ export class SwiftLintProvider implements vscode.Disposable {
 
     const timer = setTimeout(() => {
       this.debounceTimers.delete(uri);
-      this.lintDocument(e.document);
+      this.lintDocument(e.document, true);
     }, 500);
 
     this.debounceTimers.set(uri, timer);
