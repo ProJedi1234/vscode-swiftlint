@@ -1,5 +1,12 @@
 # SwiftLint for VS Code
 
+[![VS Code](https://img.shields.io/badge/VS%20Code-^1.105.0-007ACC?logo=visual-studio-code&logoColor=white)](https://code.visualstudio.com/)
+[![Swift](https://img.shields.io/badge/Swift-F05138?logo=swift&logoColor=white)](https://swift.org/)
+[![SwiftLint](https://img.shields.io/badge/SwiftLint-0.50+-orange)](https://github.com/realm/SwiftLint)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Built with Bun](https://img.shields.io/badge/Built%20with-Bun-f9f1e1?logo=bun&logoColor=black)](https://bun.sh/)
+
 SwiftLint integration for Visual Studio Code. Lints Swift files on open, save, and (optionally) as you type.
 
 ## Requirements
