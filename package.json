@@ -1,0 +1,105 @@
+{
+  "name": "vscode-swiftlint",
+  "displayName": "SwiftLint",
+  "description": "SwiftLint integration for VS Code",
+  "version": "0.1.0",
+  "publisher": "swiftlint",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": ["Linters"],
+  "activationEvents": ["onLanguage:swift"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "swiftlint.lintWorkspace",
+        "title": "SwiftLint: Lint Workspace"
+      },
+      {
+        "command": "swiftlint.fixWorkspace",
+        "title": "SwiftLint: Fix Workspace"
+      },
+      {
+        "command": "swiftlint.fixDocument",
+        "title": "SwiftLint: Fix Document"
+      }
+    ],
+    "configuration": {
+      "title": "SwiftLint",
+      "properties": {
+        "swiftlint.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable SwiftLint."
+        },
+        "swiftlint.path": {
+          "type": "string",
+          "default": "swiftlint",
+          "description": "Path to the swiftlint executable."
+        },
+        "swiftlint.configSearchPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Additional paths to search for .swiftlint.yml config files."
+        },
+        "swiftlint.additionalParameters": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Additional parameters to pass to swiftlint."
+        },
+        "swiftlint.toolchainPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the Swift toolchain directory."
+        },
+        "swiftlint.autoLintWorkspace": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically lint the entire workspace on activation."
+        },
+        "swiftlint.onlyEnableWithConfig": {
+          "type": "boolean",
+          "default": false,
+          "description": "Only enable SwiftLint when a .swiftlint.yml config is found."
+        },
+        "swiftlint.lintOnType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Lint on type with debounce (500ms)."
+        },
+        "swiftlint.lintOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Lint when a file is saved."
+        },
+        "swiftlint.verboseLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable verbose logging to the SwiftLint output channel."
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "swift",
+        "extensions": [".swift"]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "test": "bun test",
+    "package": "bunx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.105.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}
