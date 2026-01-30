@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { lintFile, lintWorkspace } from "./linter";
 import {
@@ -15,6 +16,7 @@ export class SwiftLintProvider implements vscode.Disposable {
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly documentVersions = new Map<string, number>();
   private version = 0;
+  private activated = false;
 
   constructor(private readonly outputChannel: vscode.OutputChannel) {
     this.diagnostics = vscode.languages.createDiagnosticCollection("swiftlint");
@@ -40,6 +42,9 @@ export class SwiftLintProvider implements vscode.Disposable {
     if (autoLintWorkspace()) {
       await this.lintAllWorkspaceFolders();
     }
+
+    // Mark activation complete so onDocumentOpen stops being suppressed
+    this.activated = true;
   }
 
   async lintDocument(doc: vscode.TextDocument): Promise<void> {
@@ -59,9 +64,13 @@ export class SwiftLintProvider implements vscode.Disposable {
     const controller = new AbortController();
     this.abortControllers.set(uri, controller);
 
+    const filePath = doc.uri.fsPath;
+
     try {
-      const cwd = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ?? "";
-      const diags = await lintFile(doc.uri.fsPath, cwd, {
+      const cwd =
+        vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
+        path.dirname(filePath);
+      const diags = await lintFile(filePath, cwd, {
         signal: controller.signal,
       });
 
@@ -69,10 +78,10 @@ export class SwiftLintProvider implements vscode.Disposable {
       if (this.documentVersions.get(uri) !== ver) return;
 
       this.diagnostics.set(doc.uri, diags);
-      this.log(`Linted ${doc.uri.fsPath}: ${diags.length} issue(s)`);
+      this.log(`Linted ${filePath}: ${diags.length} issue(s)`);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
-      this.logError(`Error linting ${doc.uri.fsPath}`, err);
+      this.logError(`Error linting ${filePath}`, err);
       if (this.isSpawnError(err)) {
         vscode.window.showErrorMessage(
           `SwiftLint: Could not run swiftlint. Is it installed and on your PATH? (${(err as Error).message})`,
@@ -93,7 +102,7 @@ export class SwiftLintProvider implements vscode.Disposable {
       try {
         const results = await lintWorkspace(folder.uri.fsPath);
         for (const [filePath, diags] of results) {
-          this.diagnostics.set(vscode.Uri.file(filePath), diags);
+          this.diagnostics.set(vscode.Uri.file(path.resolve(filePath)), diags);
         }
         this.log(`Workspace lint complete: ${results.size} file(s) with issues`);
       } catch (err) {
@@ -108,6 +117,8 @@ export class SwiftLintProvider implements vscode.Disposable {
   }
 
   private onDocumentOpen(doc: vscode.TextDocument): void {
+    // Skip during initial activation to avoid double-linting
+    if (!this.activated) return;
     if (this.isSwiftDocument(doc)) {
       this.lintDocument(doc);
     }
