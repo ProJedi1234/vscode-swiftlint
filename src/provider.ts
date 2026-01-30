@@ -17,7 +17,6 @@ export class SwiftLintProvider implements vscode.Disposable {
   private readonly debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly documentVersions = new Map<string, number>();
   private version = 0;
-  private activated = false;
 
   constructor(private readonly outputChannel: vscode.OutputChannel) {
     this.diagnostics = vscode.languages.createDiagnosticCollection("swiftlint");
@@ -43,9 +42,6 @@ export class SwiftLintProvider implements vscode.Disposable {
     if (autoLintWorkspace()) {
       await this.lintAllWorkspaceFolders();
     }
-
-    // Mark activation complete so onDocumentOpen stops being suppressed
-    this.activated = true;
   }
 
   async lintDocument(doc: vscode.TextDocument): Promise<void> {
@@ -53,6 +49,11 @@ export class SwiftLintProvider implements vscode.Disposable {
 
     // Skip if onlyEnableWithConfig is set and no config found for this file
     if (onlyEnableWithConfig() && !findConfigForFile(doc.uri.fsPath)) {
+      // Clear existing diagnostics and abort controller for this file
+      const uri = doc.uri.toString();
+      this.diagnostics.delete(doc.uri);
+      this.abortControllers.get(uri)?.abort();
+      this.abortControllers.delete(uri);
       return;
     }
 
@@ -119,8 +120,6 @@ export class SwiftLintProvider implements vscode.Disposable {
   }
 
   private onDocumentOpen(doc: vscode.TextDocument): void {
-    // Skip during initial activation to avoid double-linting
-    if (!this.activated) return;
     if (this.isSwiftDocument(doc)) {
       this.lintDocument(doc);
     }
