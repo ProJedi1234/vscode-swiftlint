@@ -9,6 +9,29 @@ import { killAllProcesses } from "./process";
 let provider: SwiftLintProvider | undefined;
 let outputChannel: vscode.OutputChannel | undefined;
 
+function registerDocumentCommand(
+  name: string,
+  action: (filePath: string, cwd: string) => Promise<void>,
+  label: string,
+): vscode.Disposable {
+  return vscode.commands.registerCommand(name, async () => {
+    try {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== "swift") return;
+      const doc = editor.document;
+      const cwd =
+        vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
+        path.dirname(doc.uri.fsPath);
+      await doc.save();
+      await action(doc.uri.fsPath, cwd);
+      provider?.lintDocument(doc);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      vscode.window.showErrorMessage(`${label} failed: ${msg}`);
+    }
+  });
+}
+
 const CONFIG_GLOBS = ["**/.swiftlint.yml", "**/.swiftlint.yaml"];
 
 async function workspaceHasSwiftLintConfig(): Promise<boolean> {
@@ -79,41 +102,11 @@ export async function activate(
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("swiftlint.fixDocument", async () => {
-      try {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor || editor.document.languageId !== "swift") return;
-        const doc = editor.document;
-        const cwd =
-          vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
-          path.dirname(doc.uri.fsPath);
-        await doc.save();
-        await fixFile(doc.uri.fsPath, cwd);
-        provider?.lintDocument(doc);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`SwiftLint Fix Document failed: ${msg}`);
-      }
-    }),
+    registerDocumentCommand("swiftlint.fixDocument", fixFile, "SwiftLint Fix Document"),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("swiftlint.formatDocument", async () => {
-      try {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor || editor.document.languageId !== "swift") return;
-        const doc = editor.document;
-        const cwd =
-          vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
-          path.dirname(doc.uri.fsPath);
-        await doc.save();
-        await formatFile(doc.uri.fsPath, cwd);
-        provider?.lintDocument(doc);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        vscode.window.showErrorMessage(`SwiftLint Format Document failed: ${msg}`);
-      }
-    }),
+    registerDocumentCommand("swiftlint.formatDocument", formatFile, "SwiftLint Format Document"),
   );
 
   context.subscriptions.push(
