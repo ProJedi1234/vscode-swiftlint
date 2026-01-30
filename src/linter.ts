@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { execSwiftlint, type ExecOptions } from "./process";
-import { additionalParameters, configSearchPaths } from "./config";
+import { additionalParameters, explicitConfigArgs } from "./config";
 
 interface SwiftLintViolation {
   character: number | null;
@@ -44,25 +44,27 @@ function toDiagnostic(v: SwiftLintViolation): vscode.Diagnostic {
 
 function buildArgs(extra: string[]): string[] {
   const args = ["lint", "--reporter", "json", "--quiet"];
+  args.push(...explicitConfigArgs());
   args.push(...extra);
   args.push(...additionalParameters());
   return args;
 }
 
-function findConfigArg(cwd: string): string[] {
-  const paths = configSearchPaths();
-  if (paths.length === 0) return [];
-  // Use the first config search path found
-  return ["--config", paths[0]];
-}
-
 export async function lintFile(
   filePath: string,
   cwd: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; content?: string },
 ): Promise<vscode.Diagnostic[]> {
-  const args = buildArgs([...findConfigArg(cwd), filePath]);
-  const execOpts: ExecOptions = { cwd, signal: options?.signal };
+  const useStdin = options?.content !== undefined;
+  const extra = useStdin
+    ? ["--use-stdin", "--stdin-path", filePath]
+    : [filePath];
+  const args = buildArgs(extra);
+  const execOpts: ExecOptions = {
+    cwd,
+    signal: options?.signal,
+    ...(useStdin && { stdin: options.content }),
+  };
 
   const result = await execSwiftlint(args, execOpts);
   const violations = parseViolations(result.stdout);
@@ -73,7 +75,7 @@ export async function lintWorkspace(
   folder: string,
   options?: { signal?: AbortSignal },
 ): Promise<Map<string, vscode.Diagnostic[]>> {
-  const args = buildArgs([...findConfigArg(folder)]);
+  const args = buildArgs([]);
   const execOpts: ExecOptions = { cwd: folder, signal: options?.signal };
 
   const result = await execSwiftlint(args, execOpts);
