@@ -7,6 +7,7 @@ import {
   autoLintWorkspace,
   onlyEnableWithConfig,
   findConfigForFile,
+  verboseLogging,
 } from "./config";
 
 export class SwiftLintProvider implements vscode.Disposable {
@@ -172,7 +173,9 @@ export class SwiftLintProvider implements vscode.Disposable {
   }
 
   private log(msg: string): void {
-    this.outputChannel.appendLine(`[SwiftLint] ${msg}`);
+    if (verboseLogging()) {
+      this.outputChannel.appendLine(`[SwiftLint] ${msg}`);
+    }
   }
 
   private logError(msg: string, err: unknown): void {

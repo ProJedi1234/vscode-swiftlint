@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import * as vscode from "vscode";
 import { isEnabled, onlyEnableWithConfig } from "./config";
 import { SwiftLintProvider } from "./provider";
@@ -28,7 +29,7 @@ export async function activate(
 
   outputChannel.appendLine("SwiftLint extension activating...");
 
-  // Skip activation if onlyEnableWithConfig is set and no config exists
+  // Bug fix #1 (activation): if onlyEnableWithConfig is set, check for configs
   if (onlyEnableWithConfig()) {
     const hasConfig = await workspaceHasSwiftLintConfig();
     if (!hasConfig) {
@@ -63,49 +64,71 @@ export async function activate(
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swiftlint.fixWorkspace", async () => {
-      const folders = vscode.workspace.workspaceFolders;
-      if (!folders) return;
-      for (const folder of folders) {
-        await fixWorkspace(folder.uri.fsPath);
+      try {
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders) return;
+        for (const folder of folders) {
+          await fixWorkspace(folder.uri.fsPath);
+        }
+        provider?.lintAllWorkspaceFolders();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`SwiftLint Fix Workspace failed: ${msg}`);
       }
-      provider?.lintAllWorkspaceFolders();
     }),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swiftlint.fixDocument", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== "swift") return;
-      const doc = editor.document;
-      const cwd =
-        vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ?? "";
-      await doc.save();
-      await fixFile(doc.uri.fsPath, cwd);
-      provider?.lintDocument(doc);
+      try {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor || editor.document.languageId !== "swift") return;
+        const doc = editor.document;
+        const cwd =
+          vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
+          path.dirname(doc.uri.fsPath);
+        await doc.save();
+        await fixFile(doc.uri.fsPath, cwd);
+        provider?.lintDocument(doc);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`SwiftLint Fix Document failed: ${msg}`);
+      }
     }),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swiftlint.formatDocument", async () => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.document.languageId !== "swift") return;
-      const doc = editor.document;
-      const cwd =
-        vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ?? "";
-      await doc.save();
-      await formatFile(doc.uri.fsPath, cwd);
-      provider?.lintDocument(doc);
+      try {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor || editor.document.languageId !== "swift") return;
+        const doc = editor.document;
+        const cwd =
+          vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ??
+          path.dirname(doc.uri.fsPath);
+        await doc.save();
+        await formatFile(doc.uri.fsPath, cwd);
+        provider?.lintDocument(doc);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`SwiftLint Format Document failed: ${msg}`);
+      }
     }),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand("swiftlint.formatWorkspace", async () => {
-      const folders = vscode.workspace.workspaceFolders;
-      if (!folders) return;
-      for (const folder of folders) {
-        await formatWorkspace(folder.uri.fsPath);
+      try {
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders) return;
+        for (const folder of folders) {
+          await formatWorkspace(folder.uri.fsPath);
+        }
+        provider?.lintAllWorkspaceFolders();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        vscode.window.showErrorMessage(`SwiftLint Format Workspace failed: ${msg}`);
       }
-      provider?.lintAllWorkspaceFolders();
     }),
   );
 
