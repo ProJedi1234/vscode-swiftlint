@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { lintFile, lintWorkspace } from "./linter";
-import { lintOnSave, lintOnType, autoLintWorkspace } from "./config";
+import {
+  lintOnSave,
+  lintOnType,
+  autoLintWorkspace,
+  onlyEnableWithConfig,
+  findConfigForFile,
+} from "./config";
 
 export class SwiftLintProvider implements vscode.Disposable {
   private readonly diagnostics: vscode.DiagnosticCollection;
@@ -38,6 +44,11 @@ export class SwiftLintProvider implements vscode.Disposable {
 
   async lintDocument(doc: vscode.TextDocument): Promise<void> {
     if (!this.isSwiftDocument(doc)) return;
+
+    // Skip if onlyEnableWithConfig is set and no config found for this file
+    if (onlyEnableWithConfig() && !findConfigForFile(doc.uri.fsPath)) {
+      return;
+    }
 
     const uri = doc.uri.toString();
     const ver = ++this.version;

@@ -1,10 +1,13 @@
+import * as fs from "node:fs";
 import { execSwiftlint, type ExecOptions } from "./process";
 import { additionalParameters, configSearchPaths } from "./config";
 
-function findConfigArg(cwd: string): string[] {
+function explicitConfigArgs(): string[] {
   const paths = configSearchPaths();
   if (paths.length === 0) return [];
-  return ["--config", paths[0]];
+  const valid = paths.find((p) => fs.existsSync(p));
+  if (!valid) return [];
+  return ["--config", valid];
 }
 
 export async function fixFile(
@@ -15,7 +18,7 @@ export async function fixFile(
     "lint",
     "--fix",
     "--quiet",
-    ...findConfigArg(cwd),
+    ...explicitConfigArgs(),
     ...additionalParameters(),
     filePath,
   ];
@@ -31,7 +34,7 @@ export async function formatFile(
     "--fix",
     "--format",
     "--quiet",
-    ...findConfigArg(cwd),
+    ...explicitConfigArgs(),
     ...additionalParameters(),
     filePath,
   ];
@@ -44,7 +47,7 @@ export async function formatWorkspace(folder: string): Promise<void> {
     "--fix",
     "--format",
     "--quiet",
-    ...findConfigArg(folder),
+    ...explicitConfigArgs(),
     ...additionalParameters(),
   ];
   await execSwiftlint(args, { cwd: folder });
@@ -55,7 +58,7 @@ export async function fixWorkspace(folder: string): Promise<void> {
     "lint",
     "--fix",
     "--quiet",
-    ...findConfigArg(folder),
+    ...explicitConfigArgs(),
     ...additionalParameters(),
   ];
   await execSwiftlint(args, { cwd: folder });

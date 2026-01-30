@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { isEnabled } from "./config";
+import { isEnabled, onlyEnableWithConfig } from "./config";
 import { SwiftLintProvider } from "./provider";
 import { SwiftLintCodeActionProvider } from "./actions";
 import { fixFile, fixWorkspace, formatFile, formatWorkspace } from "./fixer";
@@ -7,6 +7,16 @@ import { killAllProcesses } from "./process";
 
 let provider: SwiftLintProvider | undefined;
 let outputChannel: vscode.OutputChannel | undefined;
+
+const CONFIG_GLOBS = ["**/.swiftlint.yml", "**/.swiftlint.yaml"];
+
+async function workspaceHasSwiftLintConfig(): Promise<boolean> {
+  for (const pattern of CONFIG_GLOBS) {
+    const files = await vscode.workspace.findFiles(pattern, null, 1);
+    if (files.length > 0) return true;
+  }
+  return false;
+}
 
 export async function activate(
   context: vscode.ExtensionContext,
@@ -17,6 +27,17 @@ export async function activate(
   context.subscriptions.push(outputChannel);
 
   outputChannel.appendLine("SwiftLint extension activating...");
+
+  // Skip activation if onlyEnableWithConfig is set and no config exists
+  if (onlyEnableWithConfig()) {
+    const hasConfig = await workspaceHasSwiftLintConfig();
+    if (!hasConfig) {
+      outputChannel.appendLine(
+        "No .swiftlint.yml found in workspace and onlyEnableWithConfig is enabled. Skipping activation.",
+      );
+      return;
+    }
+  }
 
   provider = new SwiftLintProvider(outputChannel);
   context.subscriptions.push(provider);

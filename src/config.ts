@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as path from "node:path";
+import * as fs from "node:fs";
 
 function cfg(): vscode.WorkspaceConfiguration {
   return vscode.workspace.getConfiguration("swiftlint");
@@ -43,4 +45,28 @@ export function lintOnSave(): boolean {
 
 export function verboseLogging(): boolean {
   return cfg().get<boolean>("verboseLogging", false);
+}
+
+const CONFIG_NAMES = [".swiftlint.yml", ".swiftlint.yaml"];
+
+/**
+ * Walk up from a file's directory to find the nearest SwiftLint config.
+ * Used only for gating (e.g. onlyEnableWithConfig), NOT for passing to --config.
+ */
+export function findConfigForFile(filePath: string): string | undefined {
+  let dir = path.dirname(filePath);
+  const root = path.parse(dir).root;
+  while (true) {
+    for (const name of CONFIG_NAMES) {
+      const candidate = path.join(dir, name);
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+    if (dir === root) break;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return undefined;
 }

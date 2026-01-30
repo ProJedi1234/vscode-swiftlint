@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as fs from "node:fs";
 import { execSwiftlint, type ExecOptions } from "./process";
 import { additionalParameters, configSearchPaths } from "./config";
 
@@ -42,18 +43,22 @@ function toDiagnostic(v: SwiftLintViolation): vscode.Diagnostic {
   return diag;
 }
 
+function explicitConfigArgs(): string[] {
+  const paths = configSearchPaths();
+  if (paths.length === 0) return [];
+  // Only pass --config when user has explicitly set configSearchPaths.
+  // Find the first path that actually exists on disk.
+  const valid = paths.find((p) => fs.existsSync(p));
+  if (!valid) return [];
+  return ["--config", valid];
+}
+
 function buildArgs(extra: string[]): string[] {
   const args = ["lint", "--reporter", "json", "--quiet"];
+  args.push(...explicitConfigArgs());
   args.push(...extra);
   args.push(...additionalParameters());
   return args;
-}
-
-function findConfigArg(cwd: string): string[] {
-  const paths = configSearchPaths();
-  if (paths.length === 0) return [];
-  // Use the first config search path found
-  return ["--config", paths[0]];
 }
 
 export async function lintFile(
@@ -61,7 +66,7 @@ export async function lintFile(
   cwd: string,
   options?: { signal?: AbortSignal },
 ): Promise<vscode.Diagnostic[]> {
-  const args = buildArgs([...findConfigArg(cwd), filePath]);
+  const args = buildArgs([filePath]);
   const execOpts: ExecOptions = { cwd, signal: options?.signal };
 
   const result = await execSwiftlint(args, execOpts);
@@ -73,7 +78,7 @@ export async function lintWorkspace(
   folder: string,
   options?: { signal?: AbortSignal },
 ): Promise<Map<string, vscode.Diagnostic[]>> {
-  const args = buildArgs([...findConfigArg(folder)]);
+  const args = buildArgs([]);
   const execOpts: ExecOptions = { cwd: folder, signal: options?.signal };
 
   const result = await execSwiftlint(args, execOpts);
